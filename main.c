@@ -160,6 +160,21 @@ void initializeList(LinkedList *list) {
     list->temp = NULL;
 }
 
+void addUserToList(LinkedList *userlist, User *user) {
+    Node *newnode = malloc(sizeof(Node));
+    newnode->data = user;
+    newnode->next = NULL;
+    if(userlist->head == NULL) {
+        userlist->head = newnode;
+        userlist->temp = newnode;
+    }
+    else {
+        userlist->temp->next = newnode;
+        userlist->temp = newnode;
+    }
+}
+
+
 void addToList(LinkedList *list, Book *book) {
     Node *newnode = malloc(sizeof(Node)); //creates a new node of the size struct Node times the exemplaries of the book
     newnode->data = book;
@@ -252,7 +267,7 @@ int main() {
     return 0;
 }
 
-// user borrowing ausführen
+// addUserList() machen, in returnBooks() nach user und dann aus borrowedList von User löschen
 // checkoutBook funktion in 2-3 teile splitten
 //vlt weiter noch
 //dann binary trees? oder zuerst next step im learning plan

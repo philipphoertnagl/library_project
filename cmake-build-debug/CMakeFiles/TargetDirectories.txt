@@ -1,0 +1,3 @@
+/home/phl/Coding/C_lang/library_project/cmake-build-debug/CMakeFiles/library_project.dir
+/home/phl/Coding/C_lang/library_project/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/phl/Coding/C_lang/library_project/cmake-build-debug/CMakeFiles/rebuild_cache.dir

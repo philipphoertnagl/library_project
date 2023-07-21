@@ -128,7 +128,7 @@ void checkoutBook(LinkedList *list, LinkedList *borrowedBooks, BookTitle *title,
 }
 
 
-void returnBook(LinkedList *borrowedBooks, int bookID) {
+void returnBook(LinkedList *borrowedBooks, LinkedList *userList, int bookID) {
     Node *current = borrowedBooks->head;
     Node *prevnode = NULL;
     
@@ -152,6 +152,10 @@ void returnBook(LinkedList *borrowedBooks, int bookID) {
             prevnode = current;
             current = current->next;
         }
+    }
+    User *currentUser = userList->head;
+    while(currentUser != NULL) {
+
     }
 }
 

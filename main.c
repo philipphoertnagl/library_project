@@ -92,35 +92,51 @@ void checkoutBook(LinkedList *list, LinkedList *borrowedBooks, BookTitle *title,
             title->isAvailable = title->totalAmount ? 1 : 0;
 
             //picking book
-            Node *newnode = malloc(sizeof(Node));
-            newnode->data = current->data;
-            newnode->rentalTime = time(NULL);
-            newnode->due_time = newnode->rentalTime + 2 * 7 * 24 * 60 * 60;
-            newnode->next = NULL;
+            Node *newnodeBorrowedBooks = malloc(sizeof(Node));
+            Node *newnodeUser = malloc(sizeof(Node));
+            newnodeBorrowedBooks->data = current->data;
+            newnodeUser->data = current->data;
+            newnodeBorrowedBooks->rentalTime = time(NULL);
+            newnodeUser->rentalTime = time(NULL);
+            newnodeBorrowedBooks->due_time = newnodeBorrowedBooks->rentalTime + 2 * 7 * 24 * 60 * 60;
+            newnodeUser->due_time = newnodeUser->rentalTime + 2 * 7 * 24 * 60 * 60;
+            newnodeBorrowedBooks->next = NULL;
+            newnodeUser->next = NULL;
 
             // putting chosen book to the borrowlist
             if (borrowedBooks->head == NULL) {
-                borrowedBooks->head = newnode;
-                borrowedBooks->temp = newnode;
+                borrowedBooks->head = newnodeBorrowedBooks;
+                borrowedBooks->temp = newnodeBorrowedBooks;
             } else {
-                borrowedBooks->temp->next = newnode;
-                borrowedBooks->temp = newnode;
+                borrowedBooks->temp->next = newnodeBorrowedBooks;
+                borrowedBooks->temp = newnodeBorrowedBooks;
             }
+            //CREATING NEW BOOK INSTANCES
+            Book *newBook = malloc(sizeof(Book));
+            // copy the data from the library's Book instance
+            memcpy(newBook, current->data, sizeof(Book));
+            // set the newnode's data to be the new Book instance
+            newnodeBorrowedBooks->data = newBook;
+            newnodeUser->data = newBook;
+            // set the library's Book instance's isBorrowed to true
+            current->data->isBorrowed = true;
+
+
 
             //putting chosen book to USER borrowlist
             if (user->borrowedBooks.head == NULL) {
-                user->borrowedBooks.head = newnode;
-                user->borrowedBooks.temp = newnode;
+                user->borrowedBooks.head = newnodeUser;
+                user->borrowedBooks.temp = newnodeUser;
             } else {
-                user->borrowedBooks.temp->next = newnode;
-                user->borrowedBooks.temp = newnode;
+                user->borrowedBooks.temp->next = newnodeUser;
+                user->borrowedBooks.temp = newnodeUser;
             }
             user->amountBorrowedBooks++;
 
             char buffer[80];
-            due_time_converter(buffer, newnode->due_time);
-            printf("1 Book \"%s\" of ID: %d is borrowed, the book has to be returned until: %s\n", title->title,
-                   current->data->id, buffer);
+            due_time_converter(buffer, newnodeUser->due_time);
+            printf("1 Book \"%s\" of ID: %d is borrowed by User:\"%s\" , the book has to be returned until: %s\n", title->title,
+                   current->data->id, user->name, buffer);
             return;
         }
         current = current->next;
@@ -153,9 +169,24 @@ void returnBook(LinkedList *borrowedBooks, LinkedList *userList, int bookID) {
             current = current->next;
         }
     }
-    User *currentUser = userList->head;
-    while(currentUser != NULL) {
-
+    //USER LIST RETURNING
+    Node *userNode = userList->head;
+    Node *prevNodeUser = NULL;
+    while(userNode != NULL) {
+        User *user = userNode;
+        if(userNode->data->id == bookID) {
+            if(prevNodeUser == NULL) {
+                userList->head = userNode->next;
+            } else {
+                prevNodeUser->next = userNode->next;
+            }
+            user->amountBorrowedBooks--;
+            free(userNode);
+        }
+        else {
+            prevNodeUser = userNode;
+            userNode = userNode->next;
+        }
     }
 }
 
@@ -232,7 +263,7 @@ void printOverdueBooks(LinkedList *list) {
 int main() {
     //DEFINING TITLES & AMOUNT OF BOOKS HELD IN LIBRARY
     BookTitle *bookTitle1, *bookTitle2;
-    bookTitle1 = createBookTitle("Max Frisch", "Biedermann und die Brandstifter", 2);
+    bookTitle1 = createBookTitle("Max Frisch", "Biedermann & Brandstifter", 2);
     bookTitle2 = createBookTitle("Ryan Gosling", "Harry Potter", 50);
 
     //CREATING LISTS
@@ -247,6 +278,12 @@ int main() {
     user1 = createUser("Johnny");
     user2 = createUser("Sepp");
     user3 = createUser("Philippovic");
+    LinkedList userList;
+    initializeList(&userList);
+    addUserToList(&userList, user1);
+    addUserToList(&userList, user2);
+    addUserToList(&userList, user3);
+
     //BORROWING
     LinkedList borrowedBooks;
     initializeList(&borrowedBooks);
@@ -256,22 +293,34 @@ int main() {
     checkoutBook(&linkedList, &borrowedBooks, bookTitle2, user2);
     checkoutBook(&linkedList, &borrowedBooks, bookTitle2, user3);
     checkoutBook(&linkedList, &borrowedBooks, bookTitle2, user2);
+
+    //ALL BOOKS PRINTED
+    printf("\nCurrently these books are all borrowed from someone in the library \n");
     printList(&borrowedBooks);
-    //RETURNING
-    returnBook(&borrowedBooks, 4);
-    returnBook(&borrowedBooks, 6);
-    printList(&borrowedBooks);
+
+
 
     printUser(&borrowedBooks,user1);
-
     printUser(&borrowedBooks,user2);
-
     printUser(&borrowedBooks,user3);
+
+
+    //RETURNING
+    returnBook(&borrowedBooks, &userList, 1);
+    returnBook(&borrowedBooks, &userList, 5);
+
+
+    //PRINT USERS
+    printUser(&borrowedBooks,user1);
+    printUser(&borrowedBooks,user2);
+    printUser(&borrowedBooks,user3);
+
+
 
     return 0;
 }
 
 // addUserList() machen, in returnBooks() nach user und dann aus borrowedList von User löschen
-// checkoutBook funktion in 2-3 teile splitten
+// checkoutBook funktion in 2-3 teile splitten: libraryCheckout(), userCheckout(), BookCheckout();
 //vlt weiter noch
 //dann binary trees? oder zuerst next step im learning plan

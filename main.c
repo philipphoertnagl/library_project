@@ -46,6 +46,11 @@ typedef struct {
     LinkedList borrowedBooks;
 }User;
 
+typedef struct Library {
+    BookTitle *booktitle;
+    struct Library *next;
+}Library;
+
 User *createUser(const char *username) {
     User *newUser = malloc(sizeof(User));
     strcpy(newUser->name, username);
@@ -150,7 +155,7 @@ void returnBook(LinkedList *borrowedBooks, LinkedList *userList, int bookID) {
     
     while (current != NULL) {
         if (current->data->id == bookID) {
-            printf("Book %s, example: %d returned\n", current->data->bookTitle->title, current->data->id);
+            printf("\nBook %s, example: %d returned\n", current->data->bookTitle->title, current->data->id);
             if (prevnode == NULL) {
                 borrowedBooks->head = current->next;
             } else {
@@ -169,24 +174,29 @@ void returnBook(LinkedList *borrowedBooks, LinkedList *userList, int bookID) {
             current = current->next;
         }
     }
-    //USER LIST RETURNING
+    // User list returning
     Node *userNode = userList->head;
-    Node *prevNodeUser = NULL;
-    while(userNode != NULL) {
-        User *user = userNode;
-        if(userNode->data->id == bookID) {
-            if(prevNodeUser == NULL) {
-                userList->head = userNode->next;
+    while (userNode != NULL) {
+        User *user = userNode->data;
+        LinkedList *userBooks = &user->borrowedBooks;
+        Node *bookNode = userBooks->head;
+        Node *prevBookNode = NULL;
+        while (bookNode != NULL) {
+            if (bookNode->data->id == bookID) {
+                if (prevBookNode == NULL) {
+                    userBooks->head = bookNode->next;
+                } else {
+                    prevBookNode->next = bookNode->next;
+                }
+                user->amountBorrowedBooks--;
+                free(bookNode);
+                break;
             } else {
-                prevNodeUser->next = userNode->next;
+                prevBookNode = bookNode;
+                bookNode = bookNode->next;
             }
-            user->amountBorrowedBooks--;
-            free(userNode);
         }
-        else {
-            prevNodeUser = userNode;
-            userNode = userNode->next;
-        }
+        userNode = userNode->next;
     }
 }
 
@@ -231,11 +241,19 @@ void addBookCopiesToLibrary(LinkedList *list, BookTitle *bookTitle) {
     }
 }
 
+void printLibraryInventory(BookTitle *bookTitle) {
+        if(bookTitle->totalAmount > 0) {
+        printf("Of Title \"%s by %s\" are %d available\n", bookTitle->title, bookTitle->author, bookTitle->totalAmount);
+        }
+        else {
+            printf("Title \"%s by %s\" is not available at the moment\n", bookTitle->title, bookTitle->author);
+        }
+}
 
 void printList(LinkedList *list) {
     Node *current = list->head;
     while (current != NULL) {
-        printf("Example: %d of Book: %s\n", current->data->id, current->data->bookTitle->title);
+        printf("Book ID: %d of Book: %s\n", current->data->id, current->data->bookTitle->title);
         current = current->next;
     }
 }
@@ -262,40 +280,66 @@ void printOverdueBooks(LinkedList *list) {
 
 int main() {
     //DEFINING TITLES & AMOUNT OF BOOKS HELD IN LIBRARY
-    BookTitle *bookTitle1, *bookTitle2;
+    BookTitle *bookTitle1, *bookTitle2, *bookTitle3, *bookTitle4;
     bookTitle1 = createBookTitle("Max Frisch", "Biedermann & Brandstifter", 2);
-    bookTitle2 = createBookTitle("Ryan Gosling", "Harry Potter", 50);
+    bookTitle2 = createBookTitle("Leo Tolstoy", "Krieg & Frieden", 5);
+    bookTitle3 = createBookTitle("Fjodor Dostoevskiy", "Idiot", 15);
+    bookTitle4 = createBookTitle("Franz Kafka", "Die Verwandlung", 42);
 
     //CREATING LISTS
     LinkedList linkedList;
     initializeList(&linkedList);
     addBookCopiesToLibrary(&linkedList, bookTitle1);
     addBookCopiesToLibrary(&linkedList, bookTitle2);
+    addBookCopiesToLibrary(&linkedList, bookTitle3);
+    addBookCopiesToLibrary(&linkedList, bookTitle4);
     printList(&linkedList);
 
     //DEFINING USERS
-    User *user1, *user2, *user3;
+    User *user1, *user2, *user3, *user4;
     user1 = createUser("Johnny");
     user2 = createUser("Sepp");
     user3 = createUser("Philippovic");
+    user4 = createUser("Dinara");
+
     LinkedList userList;
     initializeList(&userList);
     addUserToList(&userList, user1);
     addUserToList(&userList, user2);
     addUserToList(&userList, user3);
+    addUserToList(&userList, user4);
+
+printf("\nLibrary Inventory:\n");
+    printLibraryInventory(bookTitle1);
+    printLibraryInventory(bookTitle2);
+    printLibraryInventory(bookTitle3);
+    printLibraryInventory(bookTitle4);
 
     //BORROWING
     LinkedList borrowedBooks;
     initializeList(&borrowedBooks);
+
+    printf("\n\n Borrow Station: \n\n");
     checkoutBook(&linkedList, &borrowedBooks, bookTitle1,user1);
     checkoutBook(&linkedList, &borrowedBooks, bookTitle2, user2);
     checkoutBook(&linkedList, &borrowedBooks, bookTitle2, user3);
-    checkoutBook(&linkedList, &borrowedBooks, bookTitle2, user2);
-    checkoutBook(&linkedList, &borrowedBooks, bookTitle2, user3);
-    checkoutBook(&linkedList, &borrowedBooks, bookTitle2, user2);
+    checkoutBook(&linkedList, &borrowedBooks, bookTitle4, user2);
+    checkoutBook(&linkedList, &borrowedBooks, bookTitle3, user3);
+    checkoutBook(&linkedList, &borrowedBooks, bookTitle1, user4);
+    checkoutBook(&linkedList, &borrowedBooks, bookTitle3, user4);
+    checkoutBook(&linkedList, &borrowedBooks, bookTitle4, user1);
+    checkoutBook(&linkedList, &borrowedBooks, bookTitle3, user3);
+    checkoutBook(&linkedList, &borrowedBooks, bookTitle4, user4);
+
+
+    printf("\nLibrary Inventory:\n");
+    printLibraryInventory(bookTitle1);
+    printLibraryInventory(bookTitle2);
+    printLibraryInventory(bookTitle3);
+    printLibraryInventory(bookTitle4);
 
     //ALL BOOKS PRINTED
-    printf("\nCurrently these books are all borrowed from someone in the library \n");
+    printf("\n\nCurrently these books are all borrowed from someone in the library: \n\n");
     printList(&borrowedBooks);
 
 
@@ -306,7 +350,8 @@ int main() {
 
 
     //RETURNING
-    returnBook(&borrowedBooks, &userList, 1);
+    printf("\n\nRETURN Box:");
+    returnBook(&borrowedBooks, &userList, 2);
     returnBook(&borrowedBooks, &userList, 5);
 
 
@@ -316,11 +361,12 @@ int main() {
     printUser(&borrowedBooks,user3);
 
 
-
+printf("\n");
     return 0;
 }
 
-// addUserList() machen, in returnBooks() nach user und dann aus borrowedList von User löschen
-// checkoutBook funktion in 2-3 teile splitten: libraryCheckout(), userCheckout(), BookCheckout();
-//vlt weiter noch
+
+// checkoutBook/returnBook() funktion in 2-3 teile splitten: libraryCheckout(), userCheckout(), BookCheckout();
+// code in .h und .c funktionen splitten (GITHUB!!)
+//datenspeicherung
 //dann binary trees? oder zuerst next step im learning plan

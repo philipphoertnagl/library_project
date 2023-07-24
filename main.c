@@ -140,10 +140,10 @@ void checkoutBookLibrary(LinkedList *list, LinkedList *borrowedBooks, BookTitle 
     }
 }
 
-void returnBookUser(LinkedList *userList, int bookID) {
+char *returnBookUser(LinkedList *userList, int bookID) {
     Node *userNode = userList->head;
     while (userNode != NULL) {
-        User *user = userNode->data;
+        User *user = (User *) userNode->data;
         LinkedList *userBooks = &user->borrowedBooks;
         Node *bookNode = userBooks->head;
         Node *prevBookNode = NULL;
@@ -156,7 +156,7 @@ void returnBookUser(LinkedList *userList, int bookID) {
                 }
                 user->amountBorrowedBooks--;
                 free(bookNode);
-                break;
+                return user->name;
             } else {
                 prevBookNode = bookNode;
                 bookNode = bookNode->next;
@@ -164,14 +164,21 @@ void returnBookUser(LinkedList *userList, int bookID) {
         }
         userNode = userNode->next;
     }
+    return NULL;
 }
 
 void returnBookLibrary(LinkedList *borrowedBooks, LinkedList *userList, int bookID) {
     Node *current = borrowedBooks->head;
     Node *prevnode = NULL;
+    char *username;
     while (current != NULL) {
         if (current->data->id == bookID) {
-            printf("Book %s, example: %d returned by User \" %s \" \n", current->data->bookTitle->title, current->data->id);
+            username = returnBookUser(userList,bookID);
+            if(username != NULL) {
+                printf("Book %s, example: %d returned by User \" %s \" \n",
+                       current->data->bookTitle->title, current->data->id, username);
+            }
+            else printf("No User found for the book %s, bookID: %d\n", current->data->bookTitle->title, current->data->id);
             if (prevnode == NULL) {
                 borrowedBooks->head = current->next;
             } else {
@@ -189,8 +196,8 @@ void returnBookLibrary(LinkedList *borrowedBooks, LinkedList *userList, int book
             current = current->next;
         }
     }
-    // User list returning
-    returnBookUser(userList,bookID);
+   /* // User list returning
+    returnBookUser(userList,bookID);*/
 }
 
 void initializeList(LinkedList *list) {
@@ -253,12 +260,21 @@ void printList(LinkedList *list) {
 
 void printUser(LinkedList *userlist, User *user) {
     Node *current = user->borrowedBooks.head;
-    printf("\nUser: %s has %d books borrowed. The books are: ", user->name, user->amountBorrowedBooks);
-    while(current != NULL) {
-        printf("%s, ", current->data->bookTitle->title);
-        current = current->next;
+    printf("\nUser: %s has %d books borrowed. ", user->name, user->amountBorrowedBooks);
+    if (user->amountBorrowedBooks > 0) {
+        printf("The books are: ");
     }
-}
+    while(current != NULL) {
+        if (user->amountBorrowedBooks > 0) {
+            if(current->next != NULL) {
+                printf("%s, ", current->data->bookTitle->title);
+            }
+             else printf("%s", current->data->bookTitle->title);
+            }
+            current = current->next;
+        }
+    }
+
 
 void printOverdueBooks(LinkedList *list) {
     Node *current = list->head;
@@ -359,7 +375,7 @@ printf("\n");
 }
 
 
-// returnBookUser soll username zurückgeben und dann bei returnBookLibrary() verwenden;
+
 // code in .h und .c funktionen splitten (GITHUB!!)
 //datenspeicherung
 //dann binary trees? oder zuerst next step im learning plan
